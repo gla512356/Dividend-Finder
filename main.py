@@ -159,13 +159,13 @@ render_html(f"""
     .t-label {{ font-size: 0.75rem; opacity: 0.8; margin-bottom: 4px; display: block; }}
     .t-val {{ font-size: 0.95rem; font-weight: 700; display: block; }}
 
-    /* 모바일 미디어 쿼리 */
-    @media (max-width: 480px) {
+    /* 모바일 미디어 쿼리 (수정됨: 중괄호 2개 사용) */
+    @media (max-width: 480px) {{
         .header-card {{ padding: 22px 18px; }}
         .header-title {{ font-size: 1.4rem; margin-bottom: 20px; }}
         .t-val {{ font-size: 0.9rem; }}
         .fx-rate {{ font-size: 0.9rem; }}
-    }
+    }}
 
     /* 핫픽 배너 */
     .hot-banner {{
@@ -440,7 +440,7 @@ if sel_ticker:
 
     st.write("")
 
-    # [계산기 로직]
+    # [계산기 로직 - 계산 기준 박스 복구]
     if current_tab == "💼 포트폴리오":
         st.markdown(f"<h5 style='color:{THEME_COLORS[0]}'>💼 내 보유 종목 통합 계산</h5>", unsafe_allow_html=True)
         selected_tickers = st.multiselect("보유 중인 종목 선택", options=t_list, default=[sel_ticker])
