@@ -5,7 +5,7 @@ from datetime import datetime
 import pytz
 import math
 import importlib
-import numpy as np  # NaN 처리를 위해 추가
+import numpy as np # [필수] NaN 처리를 위해 추가
 
 # ---------------------------------------------------------
 # [설정] 앱 기본 설정
@@ -35,10 +35,10 @@ for module_name, display_name, emoji in MODULE_LIST:
         mod = importlib.import_module(module_name)
         importlib.reload(mod)
         raw_data = mod.get_data()
-
+        
         ex_date = raw_data['schedule'].get('ex_date', '미정')
         short_date = ex_date.split('(')[0] if '(' in ex_date else ex_date
-
+        
         label = f"{emoji} {display_name} ({short_date})"
         loaded_providers[label] = raw_data
     except ImportError:
@@ -70,22 +70,23 @@ def render_html(raw_html):
 render_html(f"""
     <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-
+    
     html, body, [class*="css"] {{
         font-family: 'Pretendard', sans-serif;
         background-color: #f4f6f8 !important;
         color: #191f28 !important;
     }}
-
+    
+    /* 상단 여백 확보 */
     .block-container {{ padding-top: 3.5rem !important; padding-bottom: 5rem !important; }}
-
-    /* 탭 메뉴 스타일 */
+    
+    /* 탭 메뉴 (Chip Style) */
     div[data-testid="stRadio"] > div[role="radiogroup"] {{
         display: flex !important; flex-direction: row !important; overflow-x: auto !important; 
         gap: 8px !important; padding: 4px 4px 16px 4px; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important;
     }}
     div[data-testid="stRadio"] > div[role="radiogroup"]::-webkit-scrollbar {{ display: none; }}
-
+    
     div[data-testid="stRadio"] label {{
         background: #fff !important; 
         border: 1px solid #e5e8eb !important; 
@@ -98,7 +99,7 @@ render_html(f"""
         transition: all 0.2s;
         box-shadow: 0 2px 4px rgba(0,0,0,0.02);
     }}
-
+    
     div[data-testid="stRadio"] label:has(input:checked) {{
         background: linear-gradient(135deg, {THEME_COLORS[0]} 0%, {THEME_COLORS[1]} 100%) !important;
         border: 1px solid {THEME_COLORS[0]} !important; 
@@ -108,6 +109,64 @@ render_html(f"""
     }}
     div[data-testid="stRadio"] label:has(input:checked) * {{ color: white !important; }}
 
+    /* ------------------------------------------------------------- */
+    /* [New] 헤더 카드 리뉴얼 (모바일 최적화) */
+    /* ------------------------------------------------------------- */
+    .header-card {{
+        background: linear-gradient(135deg, {THEME_COLORS[0]} 0%, {THEME_COLORS[1]} 100%);
+        padding: 24px 20px; 
+        border-radius: 28px; 
+        color: white !important;
+        margin-bottom: 16px; 
+        box-shadow: 0 12px 30px -8px rgba(0,0,0,0.3);
+        position: relative; 
+        overflow: hidden;
+    }}
+    
+    /* 1행: 뱃지와 환율 */
+    .header-top-row {{
+        display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
+    }}
+    .fx-info {{
+        text-align: right; line-height: 1.2;
+    }}
+    .fx-rate {{ font-size: 1rem; font-weight: 700; opacity: 1; }}
+    .fx-time {{ font-size: 0.7rem; opacity: 0.7; font-weight: 400; }}
+
+    /* 2행: 타이틀 */
+    .header-title {{
+        font-size: 1.6rem; font-weight: 800; line-height: 1.3; margin-bottom: 24px;
+        word-break: keep-all; /* 단어 단위 줄바꿈 */
+    }}
+
+    /* 3행: 타임라인 박스 */
+    .timeline-box {{
+        background: rgba(0,0,0,0.2); 
+        border-radius: 16px; 
+        padding: 14px 0;
+        display: flex; 
+        justify-content: space-evenly; /* 균등 분배 */
+        align-items: center;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.1);
+    }}
+    .t-item {{ text-align: center; flex: 1; position: relative; }}
+    /* 구분선 (가운데 요소들에만 왼쪽 border) */
+    .t-item:not(:first-child)::after {{
+        content: ''; position: absolute; left: 0; top: 15%; height: 70%;
+        border-left: 1px solid rgba(255,255,255,0.2);
+    }}
+    .t-label {{ font-size: 0.75rem; opacity: 0.8; margin-bottom: 4px; display: block; }}
+    .t-val {{ font-size: 0.95rem; font-weight: 700; display: block; }}
+
+    /* 모바일 미디어 쿼리 */
+    @media (max-width: 480px) {
+        .header-card {{ padding: 22px 18px; }}
+        .header-title {{ font-size: 1.4rem; margin-bottom: 20px; }}
+        .t-val {{ font-size: 0.9rem; }}
+        .fx-rate {{ font-size: 0.9rem; }}
+    }
+
     /* 핫픽 배너 */
     .hot-banner {{
         background: #fff; border-radius: 16px; padding: 14px 16px; margin-bottom: 16px;
@@ -115,34 +174,16 @@ render_html(f"""
         justify-content: space-between !important; border: 1px solid #eee;
         box-shadow: 0 4px 12px rgba(0,0,0,0.03); white-space: nowrap !important;
     }}
-
-    /* 헤더 카드 */
-    .header-card {{
-        background: linear-gradient(135deg, {THEME_COLORS[0]} 0%, {THEME_COLORS[1]} 100%);
-        padding: 24px 20px; border-radius: 24px; color: white !important;
-        margin-bottom: 16px; box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-        position: relative; overflow: hidden;
-    }}
-    .header-card h2, .header-card div, .header-card span {{ color: white !important; }}
-
+    
     /* 계산 기준 박스 디자인 */
     .caution-box {{
-        margin-top: 16px; 
-        padding: 16px 20px; 
-        background: #fff !important; 
-        border-radius: 16px; 
-        border: 1px solid #e5e8eb;
-        font-size: 0.85rem; 
-        color: #555 !important; 
-        line-height: 1.6;
+        margin-top: 16px; padding: 16px 20px; background: #fff !important; 
+        border-radius: 16px; border: 1px solid #e5e8eb;
+        font-size: 0.85rem; color: #555 !important; line-height: 1.6;
         box-shadow: 0 4px 12px rgba(0,0,0,0.03);
     }}
     .caution-header {{ 
-        font-weight: 800; 
-        color: #d9534f !important; 
-        margin-bottom: 8px; 
-        display: block; 
-        font-size: 0.95rem;
+        font-weight: 800; color: #d9534f !important; margin-bottom: 8px; display: block; font-size: 0.95rem;
     }}
 
     /* 기타 UI */
@@ -158,7 +199,7 @@ render_html(f"""
     .provider-title {{ font-size: 1.1rem; font-weight: 800; color: #333; margin: 0 0 10px 4px; }}
     div.stButton > button {{ width: 100%; border-radius: 14px; height: 50px; font-weight: 700; background: #fff; border: 1px solid #ddd; }}
     div.stButton > button:hover {{ border-color: {THEME_COLORS[0]}; color: {THEME_COLORS[0]}; }}
-
+    
     /* 계산기 내부 텍스트 */
     .calc-row {{ display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center; }}
     .calc-label {{ font-size: 0.9rem; color: #666; }}
@@ -176,7 +217,7 @@ def get_us_market_status():
     ny_tz = pytz.timezone('America/New_York')
     now_ny = datetime.now(ny_tz)
     minutes = now_ny.hour * 60 + now_ny.minute
-
+    
     if now_ny.weekday() >= 5: return "⛔ 주말 휴장"
     holidays = ["2025-12-25", "2026-01-01", "2026-01-19"]
     if now_ny.strftime("%Y-%m-%d") in holidays: return "⛔ 공휴일 휴장"
@@ -189,7 +230,6 @@ def get_us_market_status():
 @st.cache_data(ttl=30, show_spinner=False)
 def get_market_info(ticker_keys):
     try:
-        # 환율 정보
         fx_data = yf.Ticker("USDKRW=X").history(period="1d")["Close"]
         if not fx_data.empty:
             fx = float(fx_data.iloc[-1])
@@ -197,23 +237,21 @@ def get_market_info(ticker_keys):
             fx = 1445.0
     except:
         fx = 1445.0
-
+    
     prices = {}
     if not ticker_keys: return fx, prices, ""
-
+    
     try:
         t_str = " ".join(ticker_keys)
-        # progress=False로 콘솔 출력 방지
         data = yf.download(t_str, period="1d", progress=False)['Close']
-
+        
         for t in ticker_keys:
             try:
-                # 1개일 때(Series)와 여러 개일 때(DataFrame) 처리
                 if len(ticker_keys) == 1:
                     val = data.iloc[-1]
                 else:
                     val = data[t].iloc[-1]
-
+                
                 # [핵심] NaN 값 체크 및 0.0 처리
                 if pd.isna(val) or np.isnan(val):
                     prices[t] = 0.0
@@ -223,7 +261,7 @@ def get_market_info(ticker_keys):
                 prices[t] = 0.0
     except:
         pass
-
+        
     now_time = datetime.now(pytz.timezone('Asia/Seoul')).strftime("%H:%M:%S")
     return fx, prices, now_time
 
@@ -279,32 +317,33 @@ else:
     best_ticker = "-"
     best_rate = 0
 
+# [리뉴얼] 헤더 카드 디자인 적용
 render_html(f"""
     <div class="header-card">
-        <div style="display:flex; justify-content:space-between; align-items:start;">
-            <div>
-                <div class="market-badge">{market_text}</div>
-                <h2 style="margin-top:5px; font-size:1.5rem; font-weight:800; line-height:1.2;">
-                    {data_source.get('title', '배당 계산기')}
-                </h2>
-            </div>
-            <div style="text-align:right;">
-                <div style="font-weight:700;">1$ = {usd_krw:,.0f}원</div>
-                <div style="font-size:0.7rem; opacity:0.8;">{update_time} 기준</div>
+        <div class="header-top-row">
+            <div class="market-badge">{market_text}</div>
+            <div class="fx-info">
+                <div class="fx-rate">1$ = {usd_krw:,.0f}원</div>
+                <div class="fx-time">{update_time} 기준</div>
             </div>
         </div>
-        <div style="display:flex; gap:10px; margin-top:20px; background:rgba(0,0,0,0.15); padding:12px; border-radius:12px;">
-            <div style="flex:1; text-align:center;">
-                <div style="font-size:0.7rem; opacity:0.8;">매수마감</div>
-                <div style="font-weight:700; font-size:0.9rem;">{SCHEDULE_KST.get('buy_limit', '-')}</div>
+        
+        <div class="header-title">
+            {data_source.get('title', '배당 계산기')}
+        </div>
+        
+        <div class="timeline-box">
+            <div class="t-item">
+                <span class="t-label">매수마감</span>
+                <span class="t-val" style="color:#ffd700;">{SCHEDULE_KST.get('buy_limit', '-')}</span>
             </div>
-            <div style="flex:1; text-align:center; border-left:1px solid rgba(255,255,255,0.2);">
-                <div style="font-size:0.7rem; opacity:0.8;">배당락일</div>
-                <div style="font-weight:700; font-size:0.9rem;">{SCHEDULE_KST.get('ex_date', '-')}</div>
+            <div class="t-item">
+                <span class="t-label">배당락일</span>
+                <span class="t-val">{SCHEDULE_KST.get('ex_date', '-')}</span>
             </div>
-            <div style="flex:1; text-align:center; border-left:1px solid rgba(255,255,255,0.2);">
-                <div style="font-size:0.7rem; opacity:0.8;">지급일</div>
-                <div style="font-weight:700; font-size:0.9rem; color:#fff;">{SCHEDULE_KST.get('pay_date', '-')}</div>
+            <div class="t-item">
+                <span class="t-label">지급일</span>
+                <span class="t-val" style="color:#69f0ae;">{SCHEDULE_KST.get('pay_date', '-')}</span>
             </div>
         </div>
     </div>
@@ -328,22 +367,22 @@ sel_ticker = st.selectbox("분석할 종목 선택", t_list)
 
 if sel_ticker:
     d = DATA_MAP[sel_ticker]
-    # 주가가 0.0이면 기본값 처리 (에러 방지)
+    # 주가 데이터 안전 처리 (NaN -> 0.0)
     curr_p = price_map.get(sel_ticker, 0.0)
     if curr_p == 0.0:
         price_display = "데이터 없음"
-        curr_p_calc = 0.0 # 계산용 (0으로 처리)
+        curr_p_calc = 0.0
     else:
         price_display = f"${curr_p:.2f}"
         curr_p_calc = curr_p
-
+    
     div_usd = d['div']
     div_krw = div_usd * usd_krw
     div_krw_net = div_krw * (1 - tax_rate)
 
     rate_disp = f"{d['rate']}%" if d['rate'] > 0 else "TBA"
     sec_disp = f"{d['sec']}%" if d['sec'] > 0 else "-"
-
+    
     grade_badge = ""
     if d['rate'] >= 80: grade_badge = "<span class='grade-badge' style='background:#ffebee; color:#c62828;'>🔥 초고배당</span>"
     elif d['rate'] >= 40: grade_badge = "<span class='grade-badge' style='background:#fff3e0; color:#ef6c00;'>⚡ 고배당</span>"
@@ -390,10 +429,10 @@ if sel_ticker:
 
     if 'prev_tab' not in st.session_state: st.session_state.prev_tab = "💼 포트폴리오"
     menu_options = ["💼 포트폴리오", "🧮 배당금", "💧 물타기", "🧪 스트레스", "📉 원금회수", "🔥 FIRE", "⛄ 스노우볼"]
-
+    
     st.write("")
     current_tab = st.radio("계산기 메뉴", menu_options, horizontal=True, label_visibility="collapsed")
-
+    
     if current_tab != st.session_state.prev_tab:
         if "FIRE" in current_tab: st.balloons()
         elif "스노우볼" in current_tab: st.snow()
@@ -401,7 +440,7 @@ if sel_ticker:
 
     st.write("")
 
-    # [계산기 로직 - 계산 기준 박스 복구]
+    # [계산기 로직]
     if current_tab == "💼 포트폴리오":
         st.markdown(f"<h5 style='color:{THEME_COLORS[0]}'>💼 내 보유 종목 통합 계산</h5>", unsafe_allow_html=True)
         selected_tickers = st.multiselect("보유 중인 종목 선택", options=t_list, default=[sel_ticker])
@@ -463,7 +502,6 @@ if sel_ticker:
     elif current_tab == "💧 물타기":
         c1, c2 = st.columns(2)
         with c1:
-            # 주가가 없으면 기본값 0.1로 처리
             def_price = curr_p_calc if curr_p_calc > 0 else 10.0
             my_avg = st.number_input("내 평단가($)", min_value=0.01, value=def_price*1.1, step=0.1, format="%.2f")
         with c2:
@@ -521,10 +559,8 @@ if sel_ticker:
         """)
 
     elif current_tab == "📉 원금회수":
-        # 주가가 0이면 10.0으로 기본 설정
         def_val = curr_p_calc if curr_p_calc > 0 else 10.0
         bep_price = st.number_input("내 평단가($)", min_value=0.1, value=def_val, step=0.1, format="%.2f", key="bep_p")
-
         if div_usd > 0:
             w_need = bep_price / div_usd
             w_need = max(0, w_need)
@@ -610,19 +646,19 @@ if sel_ticker:
     # 6. 하단 FAQ
     st.write("")
     st.markdown("##### 🧐 주린이가 자주 묻는 질문")
-
+    
     with st.expander("Q. 배당금은 언제 들어오나요?"):
         st.info("미국 현지 지급일(Pay Date)로부터 증권사 입금까지 **보통 2~3 영업일**이 더 소요됩니다. 조금만 기다려주세요! 🕒")
-
+    
     with st.expander("Q. ROC가 뭔가요? (중요 ⚠️)"):
         st.warning("""
         **Return of Capital (투자 원금 반환)**
-
+        
         펀드가 이익을 내서 주는 돈이 아니라, **여러분의 원금을 깎아서** 배당으로 주는 것을 말합니다.
         - 장점: 당장 내야 할 배당소득세가 없을 수 있습니다.
         - 단점: 내 평단가가 그만큼 낮아져서, 나중에 주식을 팔 때 양도세가 커질 수 있습니다.
         """)
-
+        
     with st.expander("Q. 환율은 어떻게 적용되나요?"):
         st.write(f"""
         이 앱은 현재 실시간 환율(**{usd_krw:,.0f}원**)을 기준으로 계산합니다. 
